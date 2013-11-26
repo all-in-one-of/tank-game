@@ -1,21 +1,47 @@
-CXX=g++
+BIN = ./tankX.bin
+INPUT = cat test_input.txt
+#ARGS = input.txt
+
+SRCDIR = ./src
+INCDIR = ./inc
+OBJDIR = ./obj
+OBJS = obj/tankX.o obj/mat4.o obj/vec4.o obj/mesh.o obj/game_object.o
+
+SRCS = $(wildcard $(SRCDIR)/*.cpp)
+INCS = $(wildcard $(INCDIR)/*.h*) $(wildcard $(INCDIR)/*.hpp)
 
 LIBS=-lGLU -lglut -IGLU
+INCLUDES= -I$(INCDIR)/
+CXX ?= c++
+CXXFLAGS = -ansi -pedantic -g -Wall $(INCLUDES)
 
-tankX: tankX.cpp mat4.o vec4.o mesh.o game_object.o
-	${CXX} -o tankX tankX.cpp mat4.o vec4.o mesh.o game_object.o ${LIBS}
+.PHONY : run bin test clean memcheck
 
-mat4.o: mat4.cpp mat4.h
-	${CXX} -c mat4.cpp mat4.h ${LIBS}
+run : $(BIN)
+	@ echo "Testing executable"
+	$(BIN) $(ARGS)
 
-vec4.o: vec4.cpp vec4.h mat4.h
-	${CXX} -c vec4.cpp vec4.h ${LIBS}
+bin : $(BIN)
 
-mesh.o: mesh.cpp mesh.h mat4.h vec4.h
-	${CXX} -c mesh.cpp mesh.h ${LIBS}
+test : clean memcheck
 
-game_object.o: game_object.cpp game_object.h vec4.h mesh.h
-	${CXX} -c game_object.cpp game_object.h ${LIBS}
+clean :
+	@ echo "Removing generated files"
+	rm -f $(BIN)
+	rm -rf $(OBJDIR)
 
-clean:
-	rm -f *.o *.gch tankX
+memcheck : $(BIN) 
+	@ echo "Running valgrind to check for memory leaks"
+	valgrind --tool=memcheck --leak-check=yes --max-stackframe=5000000 \
+	--show-reachable=yes $(BIN) $(ARGS)
+	@ echo
+
+$(BIN) : $(OBJS) $(INCS)
+	@ echo "Compiling binary"
+	$(CXX) -o $(BIN) $(OBJS) $(INCLUDES) $(LIBS)
+	@ echo
+
+obj/%.o : src/%.cpp $(INCS)
+	@- mkdir -p $(OBJDIR)
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
+	@ echo
