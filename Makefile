@@ -10,7 +10,7 @@ OBJS = obj/main.o obj/mat4.o obj/vec4.o obj/mesh.o obj/game_object.o
 SRCS = $(wildcard $(SRCDIR)/*.cpp)
 INCS = $(wildcard $(INCDIR)/*.h*) $(wildcard $(INCDIR)/*.hpp)
 
-LIBS=-lGLU -lglut -IGLU
+OGLLIBS ?= -lGLU -lglut -IGLU
 INCLUDES= -I$(INCDIR)/
 CXX ?= c++
 CXXFLAGS = -ansi -pedantic -g -Wall $(INCLUDES)
@@ -38,7 +38,7 @@ memcheck : $(BIN)
 
 $(BIN) : $(OBJS) $(INCS)
 	@ echo "Compiling binary"
-	$(CXX) -o $(BIN) $(OBJS) $(INCLUDES) $(LIBS)
+	$(CXX) -o $(BIN) $(OBJS) $(INCLUDES) $(OGLLIBS)
 	@ echo
 
 obj/%.o : src/%.cpp $(INCS)

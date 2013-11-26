@@ -1,10 +1,15 @@
 #ifndef __GAME_OBJECT_H__
 #define __GAME_OBJECT_H__
 
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#include <OpenGL/glext.h>
+#else
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
 #include <GL/glut.h>
+#endif
 
 #include <iostream>
 #include <string>

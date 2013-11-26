@@ -1,7 +1,12 @@
+#ifdef __APPLE__
+#include <GLUT/glut.h>
+#include <OpenGL/glext.h>
+#else
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glx.h>
 #include <GL/glut.h>
+#endif
 
 #include <iostream>
 #include <math.h>
