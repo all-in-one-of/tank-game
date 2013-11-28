@@ -8,3 +8,4 @@ game_object::game_object(int id, int geo_id, int tex_id, int health)
 }
 
 game_object::~game_object(){}
+

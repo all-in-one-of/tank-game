@@ -131,6 +131,7 @@ vec4 & vec4::operator*=(const double c)
 	x *= c;
 	y *= c;
 	z *= c;
+	return *this;
 }
 vec4 & vec4::operator*=(const mat4& m)
 {	
@@ -210,3 +211,4 @@ vec2::vec2(double u, double v)
 // // 	vec4 c = v1.cross(v2);
 // // 	std::cout << "c: "<<  c.x << ", " << c.y << ", " << c.z << ", " << c.w << std::endl;
 // }
+
