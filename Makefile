@@ -10,7 +10,7 @@ OBJS = obj/main.o obj/mat4.o obj/vec4.o obj/mesh.o obj/game_object.o
 SRCS = $(wildcard $(SRCDIR)/*.cpp)
 INCS = $(wildcard $(INCDIR)/*.h*) $(wildcard $(INCDIR)/*.hpp)
 
-OGLLIBS ?= -lGLU -lglut -IGLU
+OGLLIBS ?= -lGL -lglut -lGLU
 INCLUDES= -I$(INCDIR)/
 CXX ?= c++
 CXXFLAGS = -ansi -pedantic -g -Wall $(INCLUDES)
