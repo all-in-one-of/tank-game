@@ -11,6 +11,7 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+#include <stddef.h>
 
 #include "vec4.h"
 #include "mat4.h"
@@ -28,6 +29,7 @@ bool specialKeys[1000] = {0};
 
 std::vector<mesh> meshes;
 std::vector<game_object> characters;
+game_object camera(-1,-1,-1); //DO NOT DRAW
 
 int HERO_ID = 0;
 int ENEMY_ID = 1;
@@ -149,10 +151,13 @@ GLvoid InitGL(){
 	loadPPM(environment_tex_file.c_str(), ENVIRONMENT_TEX);
 
 	game_object hero_character(characters.size(), HERO_ID, HERO_TEX);
+	hero_character.parent_to(camera);
 	characters.push_back(hero_character);
 	game_object enemy_character(characters.size(), ENEMY_ID, ENEMY_TEX);
+	enemy_character.parent_to(camera);
 	characters.push_back(enemy_character);
 	game_object environment_character(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
+	environment_character.parent_to(camera);
 	characters.push_back(environment_character);
 
 	//GL boilerplate initialization
@@ -200,7 +205,10 @@ GLvoid DrawGLScene(){
     for(int i=0; i<characters.size(); i++)
     {
     	glBindTexture(GL_TEXTURE_2D, characters[i].tex);
+    	glPushMatrix();
+    	glMultMatrixd(characters[i].get_transform());
     	DrawObj(meshes[characters[i].geo]);
+    	glPopMatrix();
     }
 
     glFlush();
@@ -246,7 +254,8 @@ GLvoid GLKeyDown(unsigned char key, int x, int y){
 	}
 	if(key=='w')
 	{
-		
+		camera.transform.rotateY(10.0);
+		glutPostRedisplay();
 	}
 	if(key=='s')
 	{
@@ -305,19 +314,19 @@ GLvoid SpecialKeysUp(int key, int x, int y){
 
 bool HandleKeyboardInput(){
 	if(specialKeys[GLUT_KEY_LEFT]){
-		
+		characters[HERO_ID].transform.translate(-0.01,0.0,0.0);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_RIGHT]){
-		
+		characters[HERO_ID].transform.translate(0.01,0.0,0.0);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_UP]){
-
+		characters[HERO_ID].transform.translate(0.0,0.0,-0.01);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_DOWN]){
-
+		characters[HERO_ID].transform.translate(0.0,0.0,0.01);
 		return true;
 	}
 	return false;
