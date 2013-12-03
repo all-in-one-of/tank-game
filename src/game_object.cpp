@@ -17,13 +17,21 @@ void game_object::parent_to(game_object &o)
 
 GLdouble* game_object::get_transform()
 {
-	mat4 total_transform = this->transform;
+	mat4 total_transform;// = this->transform;
 	game_object *cur_parent = parent;
+	std::vector<game_object*> parents;
 	while(cur_parent!=NULL)
 	{
-		total_transform *= cur_parent->transform;
+		// total_transform *= cur_parent->transform;
+		// total_transform = cur_parent->transform * total_transform;
+		parents.push_back(cur_parent);
 		cur_parent = cur_parent->parent;
 	}
+	for(int p=0; p<parents.size(); p++)
+	{
+		total_transform *= parents[p]->transform;
+	}
+	total_transform *= this->transform;
 	for(int i=0; i<16; i++)
 	{
 		int x = i/4;

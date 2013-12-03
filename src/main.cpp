@@ -151,7 +151,6 @@ GLvoid InitGL(){
 	loadPPM(environment_tex_file.c_str(), ENVIRONMENT_TEX);
 
 	game_object hero_character(characters.size(), HERO_ID, HERO_TEX);
-	hero_character.parent_to(camera);
 	characters.push_back(hero_character);
 	game_object enemy_character(characters.size(), ENEMY_ID, ENEMY_TEX);
 	enemy_character.parent_to(camera);
@@ -198,15 +197,18 @@ GLvoid DrawGLScene(){
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
+	glTranslatef(0.0,-1.0,-3.5);
+	// glRotatef(5.0,1,0,0);
     
     glViewport(0, 0, windowWidth, windowHeight);
-    glTranslatef(0.0f, 0.0f, -5.0f);
+    // glTranslatef(0.0f, 0.0f, -5.0f);
 
     for(int i=0; i<characters.size(); i++)
     {
     	glBindTexture(GL_TEXTURE_2D, characters[i].tex);
     	glPushMatrix();
     	glMultMatrixd(characters[i].get_transform());
+    	// glMultMatrixd(initial_transform.get_transform());
     	DrawObj(meshes[characters[i].geo]);
     	glPopMatrix();
     }
@@ -254,8 +256,8 @@ GLvoid GLKeyDown(unsigned char key, int x, int y){
 	}
 	if(key=='w')
 	{
-		camera.transform.rotateY(10.0);
-		glutPostRedisplay();
+		// camera.transform.rotateY(10.0);
+		// glutPostRedisplay();
 	}
 	if(key=='s')
 	{
@@ -314,19 +316,21 @@ GLvoid SpecialKeysUp(int key, int x, int y){
 
 bool HandleKeyboardInput(){
 	if(specialKeys[GLUT_KEY_LEFT]){
-		characters[HERO_ID].transform.translate(-0.01,0.0,0.0);
+		// camera.transform.translate(-0.01,0.0,0.0);
+		camera.transform.rotateY(-0.1);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_RIGHT]){
-		characters[HERO_ID].transform.translate(0.01,0.0,0.0);
+		// camera.transform.translate(0.01,0.0,0.0);
+		camera.transform.rotateY(0.1);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_UP]){
-		characters[HERO_ID].transform.translate(0.0,0.0,-0.01);
+		camera.transform.translate(0.0,0.0,0.03);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_DOWN]){
-		characters[HERO_ID].transform.translate(0.0,0.0,0.01);
+		camera.transform.translate(0.0,0.0,-0.03);
 		return true;
 	}
 	return false;

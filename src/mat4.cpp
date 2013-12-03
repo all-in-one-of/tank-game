@@ -24,7 +24,7 @@ void mat4::translate(double tx, double ty, double tz)
 	tr.data[0][3] = tx;
 	tr.data[1][3] = ty;
 	tr.data[2][3] = tz;
-	(*this) *= tr;
+	(*this) = tr*(*this);
 }
 void mat4::scale(double sx, double sy, double sz)
 {
@@ -32,7 +32,7 @@ void mat4::scale(double sx, double sy, double sz)
 	ts.data[0][0] = sx;
 	ts.data[1][1] = sy;
 	ts.data[2][2] = sz;
-	(*this) *= ts;
+	(*this) = ts*(*this);
 }
 void mat4::rotateX(double theta)
 {
@@ -42,7 +42,7 @@ void mat4::rotateX(double theta)
 	rx.data[1][2] = -sin(rad);
 	rx.data[2][1] = sin(rad);
 	rx.data[2][2] = cos(rad);
-	(*this) *= rx;
+	(*this) = rx*(*this);
 }
 void mat4::rotateY(double theta)
 {
@@ -52,7 +52,7 @@ void mat4::rotateY(double theta)
 	ry.data[0][2] = sin(rad);
 	ry.data[2][0] = -sin(rad);
 	ry.data[2][2] = cos(rad);
-	(*this) *= ry;
+	(*this) = ry*(*this);
 }
 void mat4::rotateZ(double theta)
 {
@@ -62,7 +62,7 @@ void mat4::rotateZ(double theta)
 	rz.data[0][1] = -sin(rad);
 	rz.data[1][0] = sin(rad);
 	rz.data[1][1] = cos(rad);
-	(*this) *= rz;
+	(*this) = rz*(*this);
 }
 
 double & mat4::operator()(const int i, const int j)
