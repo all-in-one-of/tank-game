@@ -34,9 +34,23 @@ game_object camera(-1,-1,-1); //DO NOT DRAW
 int HERO_ID = 0;
 int ENEMY_ID = 1;
 int ENVIRONMENT_ID = 2;
+int TARGET_ID = 3;
 GLuint HERO_TEX = 0;
 GLuint ENEMY_TEX = 1;
 GLuint ENVIRONMENT_TEX = 2;
+GLuint TARGET_TEX = 3;
+
+double TANK_TURN = 1.0;
+double TANK_SPEED = 0.1;
+double TURRET_TURN = 1.0;
+double TURRET_SPEED = .1;
+
+int turret_rotate = 0;
+int turret_translate = 0;
+int MIN_TURRET_ROTATE = -30;
+int MAX_TURRET_ROTATE = 30;
+int MIN_TURRET_TRANSLATE = 5.0;
+int MAX_TURRET_TRANSLATE = 10.0;
 
 bool HandleKeyboardInput();
 GLvoid InitGL();
@@ -127,28 +141,35 @@ GLvoid InitGL(){
 	std::string hero_geo_file = "geo/car.obj";
 	std::string enemy_geo_file = "geo/tire.obj";
 	std::string environment_geo_file = "geo/ParkingLot.obj";
+	std::string target_geo_file = "geo/target.obj";
 
 	std::string hero_tex_file = "tex/car.ppm";
 	std::string enemy_tex_file = "tex/tire.ppm";
 	std::string environment_tex_file = "tex/ParkingLot.ppm";
+	std::string target_tex_file = "tex/target.ppm";
 
 	mesh hero(hero_geo_file);
 	mesh enemy(enemy_geo_file);
 	mesh environment(environment_geo_file);
+	mesh target(target_geo_file);
 	HERO_ID = meshes.size();
 	meshes.push_back(hero);
 	ENEMY_ID = meshes.size();
 	meshes.push_back(enemy);
 	ENVIRONMENT_ID = meshes.size();
 	meshes.push_back(environment);
+	TARGET_ID = meshes.size();
+	meshes.push_back(target);
 
 	glEnable(GL_TEXTURE_2D);
 	glGenTextures(1, &HERO_TEX);
 	glGenTextures(1, &ENEMY_TEX);
 	glGenTextures(1, &ENVIRONMENT_TEX);
+	glGenTextures(1, &TARGET_TEX);
 	loadPPM(hero_tex_file.c_str(), HERO_TEX);
 	loadPPM(enemy_tex_file.c_str(), ENEMY_TEX);
 	loadPPM(environment_tex_file.c_str(), ENVIRONMENT_TEX);
+	loadPPM(target_tex_file.c_str(), TARGET_TEX);
 
 	game_object hero_character(characters.size(), HERO_ID, HERO_TEX);
 	characters.push_back(hero_character);
@@ -158,6 +179,9 @@ GLvoid InitGL(){
 	game_object environment_character(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
 	environment_character.parent_to(camera);
 	characters.push_back(environment_character);
+	game_object target_character(characters.size(), TARGET_ID, TARGET_TEX);
+	target_character.transform.translate(0.0,0.0,-5.0);
+	characters.push_back(target_character);
 
 	//GL boilerplate initialization
 	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
@@ -256,20 +280,37 @@ GLvoid GLKeyDown(unsigned char key, int x, int y){
 	}
 	if(key=='w')
 	{
-		// camera.transform.rotateY(10.0);
-		// glutPostRedisplay();
+		vec4 pos = characters[TARGET_ID].transform*vec4(0,0,0);
+		double dist = pos.length();
+		if(dist<MAX_TURRET_TRANSLATE)
+		{
+			vec4 mv_dir = (pos)*TURRET_SPEED;
+			characters[TARGET_ID].transform.translate(mv_dir.x, 0, mv_dir.z);
+			glutPostRedisplay();
+		}
 	}
 	if(key=='s')
 	{
-		
+		vec4 pos = characters[TARGET_ID].transform*vec4(0,0,0);
+		double dist = pos.length();
+		if(dist>MIN_TURRET_TRANSLATE)
+		{
+			vec4 mv_dir = (pos)*TURRET_SPEED;
+			characters[TARGET_ID].transform.translate(-mv_dir.x, 0, -mv_dir.z);
+			glutPostRedisplay();
+		}
 	}
-	if(key=='a')
+	if(key=='a'&&turret_rotate<MAX_TURRET_ROTATE)
 	{
-		
+		turret_rotate++;
+		characters[TARGET_ID].transform.rotateY(TURRET_TURN);
+		glutPostRedisplay();
 	}
-	if(key=='d')
+	if(key=='d'&&turret_rotate>MIN_TURRET_ROTATE)
 	{
-		
+		turret_rotate--;
+		characters[TARGET_ID].transform.rotateY(-TURRET_TURN);
+		glutPostRedisplay();
 	}
 }
 
@@ -316,21 +357,19 @@ GLvoid SpecialKeysUp(int key, int x, int y){
 
 bool HandleKeyboardInput(){
 	if(specialKeys[GLUT_KEY_LEFT]){
-		// camera.transform.translate(-0.01,0.0,0.0);
-		camera.transform.rotateY(-0.1);
+		camera.transform.rotateY(-TANK_TURN);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_RIGHT]){
-		// camera.transform.translate(0.01,0.0,0.0);
-		camera.transform.rotateY(0.1);
+		camera.transform.rotateY(TANK_TURN);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_UP]){
-		camera.transform.translate(0.0,0.0,0.03);
+		camera.transform.translate(0.0,0.0,TANK_SPEED);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_DOWN]){
-		camera.transform.translate(0.0,0.0,-0.03);
+		camera.transform.translate(0.0,0.0,-TANK_SPEED);
 		return true;
 	}
 	return false;
@@ -356,4 +395,3 @@ int main(int argc, char* argv[])
 	glutSpecialUpFunc(SpecialKeysUp);
 	glutMainLoop();
 }
-

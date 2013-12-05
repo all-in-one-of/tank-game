@@ -51,6 +51,7 @@ public:
 	friend vec4 operator+(const vec4& v1, const vec4& v2);
 	friend vec4 operator-(const vec4& v, const double c);
 	friend vec4 operator+(const vec4& v, const double c);
+	friend vec4 operator*(const vec4& v, const double c);
 	friend vec4 operator*(const mat4& m, const vec4& v);
 };
 
