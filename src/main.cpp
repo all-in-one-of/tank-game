@@ -35,10 +35,14 @@ int HERO_ID = 0;
 int ENEMY_ID = 1;
 int ENVIRONMENT_ID = 2;
 int TARGET_ID = 3;
+int SWIVEL_ID = 4;
+int BARREL_ID = 5;
 GLuint HERO_TEX = 0;
 GLuint ENEMY_TEX = 1;
 GLuint ENVIRONMENT_TEX = 2;
 GLuint TARGET_TEX = 3;
+GLuint SWIVEL_TEX = 4;
+GLuint BARREL_TEX = 5;
 
 double TANK_TURN = 1.0;
 double TANK_SPEED = 0.1;
@@ -49,8 +53,8 @@ int turret_rotate = 0;
 int turret_translate = 0;
 int MIN_TURRET_ROTATE = -30;
 int MAX_TURRET_ROTATE = 30;
-int MIN_TURRET_TRANSLATE = 5.0;
-int MAX_TURRET_TRANSLATE = 10.0;
+int MIN_TURRET_TRANSLATE = 7.0;
+int MAX_TURRET_TRANSLATE = 11.0;
 
 bool HandleKeyboardInput();
 GLvoid InitGL();
@@ -142,16 +146,22 @@ GLvoid InitGL(){
 	std::string enemy_geo_file = "geo/tire.obj";
 	std::string environment_geo_file = "geo/ParkingLot.obj";
 	std::string target_geo_file = "geo/target.obj";
+	std::string swivel_geo_file = "geo/swivel.obj";
+	std::string barrel_geo_file = "geo/barrel.obj";
 
 	std::string hero_tex_file = "tex/car.ppm";
 	std::string enemy_tex_file = "tex/tire.ppm";
 	std::string environment_tex_file = "tex/ParkingLot.ppm";
 	std::string target_tex_file = "tex/target.ppm";
+	std::string swivel_tex_file = "tex/swivel.ppm";
+	std::string barrel_tex_file = "tex/barrel.ppm";
 
 	mesh hero(hero_geo_file);
 	mesh enemy(enemy_geo_file);
 	mesh environment(environment_geo_file);
 	mesh target(target_geo_file);
+	mesh swivel(swivel_geo_file);
+	mesh barrel(barrel_geo_file);
 	HERO_ID = meshes.size();
 	meshes.push_back(hero);
 	ENEMY_ID = meshes.size();
@@ -160,16 +170,24 @@ GLvoid InitGL(){
 	meshes.push_back(environment);
 	TARGET_ID = meshes.size();
 	meshes.push_back(target);
+	SWIVEL_ID = meshes.size();
+	meshes.push_back(swivel);
+	BARREL_ID = meshes.size();
+	meshes.push_back(barrel);
 
 	glEnable(GL_TEXTURE_2D);
 	glGenTextures(1, &HERO_TEX);
 	glGenTextures(1, &ENEMY_TEX);
 	glGenTextures(1, &ENVIRONMENT_TEX);
 	glGenTextures(1, &TARGET_TEX);
+	glGenTextures(1, &SWIVEL_TEX);
+	glGenTextures(1, &BARREL_TEX);
 	loadPPM(hero_tex_file.c_str(), HERO_TEX);
 	loadPPM(enemy_tex_file.c_str(), ENEMY_TEX);
 	loadPPM(environment_tex_file.c_str(), ENVIRONMENT_TEX);
 	loadPPM(target_tex_file.c_str(), TARGET_TEX);
+	loadPPM(swivel_tex_file.c_str(), SWIVEL_TEX);
+	loadPPM(barrel_tex_file.c_str(), BARREL_TEX);
 
 	game_object hero_character(characters.size(), HERO_ID, HERO_TEX);
 	characters.push_back(hero_character);
@@ -180,8 +198,16 @@ GLvoid InitGL(){
 	environment_character.parent_to(camera);
 	characters.push_back(environment_character);
 	game_object target_character(characters.size(), TARGET_ID, TARGET_TEX);
-	target_character.transform.translate(0.0,0.0,-5.0);
+	target_character.transform.translate(0.0,0.0,-7.0);
 	characters.push_back(target_character);
+	game_object swivel_character(characters.size(), SWIVEL_ID, SWIVEL_TEX);
+	swivel_character.transform.translate(0.0,0.4,0.0);
+	characters.push_back(swivel_character);
+	game_object barrel_character(characters.size(), BARREL_ID, BARREL_TEX);
+	// barrel_character.transform.translate(0.0,0.4,0.0);
+	barrel_character.parent_to(characters[SWIVEL_ID]);
+	characters.push_back(barrel_character);
+
 
 	//GL boilerplate initialization
 	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
@@ -221,7 +247,7 @@ GLvoid DrawGLScene(){
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glLoadIdentity();
-	glTranslatef(0.0,-1.0,-3.5);
+	glTranslatef(0.0,-1.0,-3.25);
 	// glRotatef(5.0,1,0,0);
     
     glViewport(0, 0, windowWidth, windowHeight);
@@ -286,6 +312,7 @@ GLvoid GLKeyDown(unsigned char key, int x, int y){
 		{
 			vec4 mv_dir = (pos)*TURRET_SPEED;
 			characters[TARGET_ID].transform.translate(mv_dir.x, 0, mv_dir.z);
+			characters[BARREL_ID].transform.rotateX(2.0);
 			glutPostRedisplay();
 		}
 	}
@@ -297,6 +324,7 @@ GLvoid GLKeyDown(unsigned char key, int x, int y){
 		{
 			vec4 mv_dir = (pos)*TURRET_SPEED;
 			characters[TARGET_ID].transform.translate(-mv_dir.x, 0, -mv_dir.z);
+			characters[BARREL_ID].transform.rotateX(-2.0);
 			glutPostRedisplay();
 		}
 	}
@@ -304,12 +332,14 @@ GLvoid GLKeyDown(unsigned char key, int x, int y){
 	{
 		turret_rotate++;
 		characters[TARGET_ID].transform.rotateY(TURRET_TURN);
+		characters[SWIVEL_ID].transform.rotateY(TURRET_TURN);
 		glutPostRedisplay();
 	}
 	if(key=='d'&&turret_rotate>MIN_TURRET_ROTATE)
 	{
 		turret_rotate--;
 		characters[TARGET_ID].transform.rotateY(-TURRET_TURN);
+		characters[SWIVEL_ID].transform.rotateY(-TURRET_TURN);
 		glutPostRedisplay();
 	}
 }
