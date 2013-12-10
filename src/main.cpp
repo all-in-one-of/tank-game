@@ -12,6 +12,7 @@
 #include <math.h>
 #include <vector>
 #include <stddef.h>
+#include <time.h>
 
 #include "vec4.h"
 #include "mat4.h"
@@ -28,8 +29,9 @@ int windowHeight = 480;
 bool specialKeys[1000] = {0};
 
 std::vector<mesh> meshes;
-std::vector<game_object> characters;
-game_object camera(-1,-1,-1); //DO NOT DRAW
+std::vector<game_object*> characters;
+std::vector<int> bad_guys;
+game_object *camera; //DO NOT DRAW
 
 int HERO_ID = 0;
 int ENEMY_ID = 1;
@@ -48,6 +50,10 @@ double TANK_TURN = 1.0;
 double TANK_SPEED = 0.1;
 double TURRET_TURN = 1.0;
 double TURRET_SPEED = .1;
+
+double BAD_GUY_SPEED = 0.01;
+double last_update;
+double UPDATE_INC = 0.05;
 
 int turret_rotate = 0;
 int turret_translate = 0;
@@ -189,25 +195,39 @@ GLvoid InitGL(){
 	loadPPM(swivel_tex_file.c_str(), SWIVEL_TEX);
 	loadPPM(barrel_tex_file.c_str(), BARREL_TEX);
 
-	game_object hero_character(characters.size(), HERO_ID, HERO_TEX);
-	characters.push_back(hero_character);
-	game_object enemy_character(characters.size(), ENEMY_ID, ENEMY_TEX);
-	enemy_character.parent_to(camera);
-	characters.push_back(enemy_character);
-	game_object environment_character(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
-	environment_character.parent_to(camera);
-	characters.push_back(environment_character);
-	game_object target_character(characters.size(), TARGET_ID, TARGET_TEX);
-	target_character.transform.translate(0.0,0.0,-7.0);
-	characters.push_back(target_character);
-	game_object swivel_character(characters.size(), SWIVEL_ID, SWIVEL_TEX);
-	swivel_character.transform.translate(0.0,0.4,0.0);
-	characters.push_back(swivel_character);
-	game_object barrel_character(characters.size(), BARREL_ID, BARREL_TEX);
-	// barrel_character.transform.translate(0.0,0.4,0.0);
-	barrel_character.parent_to(characters[SWIVEL_ID]);
-	characters.push_back(barrel_character);
+	camera = new game_object(-1,-1,-1);
 
+	game_object *hero_character = new game_object(characters.size(), HERO_ID, HERO_TEX);
+	characters.push_back(hero_character);
+	game_object *enemy_character = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
+	enemy_character->parent_to(camera);
+	characters.push_back(enemy_character);
+	game_object *environment_character = new game_object(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
+	environment_character->parent_to(camera);
+	characters.push_back(environment_character);
+	game_object *target_character = new game_object(characters.size(), TARGET_ID, TARGET_TEX);
+	target_character->transform.translate(0.0,0.0,-7.0);
+	characters.push_back(target_character);
+	game_object *swivel_character = new game_object(characters.size(), SWIVEL_ID, SWIVEL_TEX);
+	swivel_character->transform.translate(0.0,0.4,0.0);
+	characters.push_back(swivel_character);
+	game_object *barrel_character = new game_object(characters.size(), BARREL_ID, BARREL_TEX);
+	// barrel_character.transform.translate(0.0,0.4,0.0);
+	barrel_character->parent_to(characters[SWIVEL_ID]);
+	characters.push_back(barrel_character);
+	bad_guys.push_back(ENEMY_ID);
+	for(int i=0; i<10; i++)
+	{
+		game_object *enemyX = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
+		enemyX->transform.translate(i*1.0, 0.0, i*1.0);
+		enemyX->parent_to(camera);
+		bad_guys.push_back(characters.size());
+		characters.push_back(enemyX);
+		bad_guys.push_back(ENEMY_ID);
+	}
+	// clock_t start = clock();
+	// (double)time_gone_by / ((double)CLOCKS_PER_SEC)
+	last_update = (double)clock() / ((double)CLOCKS_PER_SEC);
 
 	//GL boilerplate initialization
 	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
@@ -255,14 +275,45 @@ GLvoid DrawGLScene(){
 
     for(int i=0; i<characters.size(); i++)
     {
-    	glBindTexture(GL_TEXTURE_2D, characters[i].tex);
+    	glBindTexture(GL_TEXTURE_2D, characters[i]->tex);
     	glPushMatrix();
-    	glMultMatrixd(characters[i].get_transform());
+    	glMultMatrixd(characters[i]->get_transform());
+    	DrawObj(meshes[characters[i]->geo]);
     	// glMultMatrixd(initial_transform.get_transform());
-    	DrawObj(meshes[characters[i].geo]);
+    	// if(i==BARREL_ID)
+    	// {
+    	// DrawObj(meshes[characters[HERO_ID].geo]);
+    	// std::cout << "drew barrel" << std::endl;
+    	// }
+    	// else
+    	// {
+    	// DrawObj(meshes[characters[TARGET_ID].geo]);
+    	// }
     	glPopMatrix();
+    	// if(i==BARREL_ID)
+    	// {
+    	// for(int j=0; j<4; j++)
+    	// {
+    	// 	for(int k=0; k<4; k++)
+    	// 	{
+    	// 		std::cout << characters[i]->parent->transform(k,j) << " ";
+    	// 	}
+    	// 	std::cout << std::endl;
+    	// }
+    	// // 	std::cout << characters[i].transform(0,3) << characters[i].transform(1,3)<< characters[i].transform(2,3) << std::endl;
+    	// }
     }
 
+ //    double now = (double)clock() / ((double)CLOCKS_PER_SEC);
+ //    if(now - last_update > UPDATE_INC)
+ //    {
+	//     for(int i=0; i<bad_guys.size(); i++)
+	//     {
+	//     	vec4 pos = characters[bad_guys[i]]transform*vec4(0,0,0);
+	//     	pos.normalize();
+	//     	characters[bad_guys[i]].transform.translate(-pos.x, -pos.y, -pos.z);
+	//     }
+	// }
     glFlush();
 	glutSwapBuffers();
 }
@@ -271,6 +322,18 @@ GLvoid IdleGLScene(){
 	if(HandleKeyboardInput())
 	{	
 		glutPostRedisplay();
+	}
+	double now = (double)clock() / ((double)CLOCKS_PER_SEC);
+    if(now - last_update > UPDATE_INC)
+    {
+	    for(int i=0; i<bad_guys.size(); i++)
+	    {
+	    	vec4 pos = characters[bad_guys[i]]->transform*vec4(0,0,0);
+	    	pos.normalize();
+	    	pos *= BAD_GUY_SPEED;
+	    	characters[bad_guys[i]]->transform.translate(-pos.x, -pos.y, -pos.z);
+	    }
+	    glutPostRedisplay();
 	}
 }
 
@@ -290,56 +353,61 @@ GLvoid ResizeGLScene(int width, int height){
 	glutPostRedisplay();
 }
 
+bool test_collisions()
+{
+	vec4 pos = characters[TARGET_ID]->transform*vec4(0,0,0);
+	for(int i=0; i<bad_guys.size(); i++)
+	{
+
+	}
+}
+
 /*
  * This function handles all normal key presses on the keyboard. If you need
  * to capture special keys like, ctrl, shift, F1, F2, F..., or arrow keys use
  * the special keys function
  */
 GLvoid GLKeyDown(unsigned char key, int x, int y){
-	if(key=='q')
-	{
-		
-	}
-	if(key=='e')
+	if(key==' ')
 	{
 		
 	}
 	if(key=='w')
 	{
-		vec4 pos = characters[TARGET_ID].transform*vec4(0,0,0);
+		vec4 pos = characters[TARGET_ID]->transform*vec4(0,0,0);
 		double dist = pos.length();
 		if(dist<MAX_TURRET_TRANSLATE)
 		{
 			vec4 mv_dir = (pos)*TURRET_SPEED;
-			characters[TARGET_ID].transform.translate(mv_dir.x, 0, mv_dir.z);
-			characters[BARREL_ID].transform.rotateX(2.0);
+			characters[TARGET_ID]->transform.translate(mv_dir.x, 0, mv_dir.z);
+			characters[BARREL_ID]->transform.rotateX(2.0);
 			glutPostRedisplay();
 		}
 	}
 	if(key=='s')
 	{
-		vec4 pos = characters[TARGET_ID].transform*vec4(0,0,0);
+		vec4 pos = characters[TARGET_ID]->transform*vec4(0,0,0);
 		double dist = pos.length();
 		if(dist>MIN_TURRET_TRANSLATE)
 		{
 			vec4 mv_dir = (pos)*TURRET_SPEED;
-			characters[TARGET_ID].transform.translate(-mv_dir.x, 0, -mv_dir.z);
-			characters[BARREL_ID].transform.rotateX(-2.0);
+			characters[TARGET_ID]->transform.translate(-mv_dir.x, 0, -mv_dir.z);
+			characters[BARREL_ID]->transform.rotateX(-2.0);
 			glutPostRedisplay();
 		}
 	}
 	if(key=='a'&&turret_rotate<MAX_TURRET_ROTATE)
 	{
 		turret_rotate++;
-		characters[TARGET_ID].transform.rotateY(TURRET_TURN);
-		characters[SWIVEL_ID].transform.rotateY(TURRET_TURN);
+		characters[TARGET_ID]->transform.rotateY(TURRET_TURN);
+		characters[SWIVEL_ID]->transform.rotateY(TURRET_TURN);
 		glutPostRedisplay();
 	}
 	if(key=='d'&&turret_rotate>MIN_TURRET_ROTATE)
 	{
 		turret_rotate--;
-		characters[TARGET_ID].transform.rotateY(-TURRET_TURN);
-		characters[SWIVEL_ID].transform.rotateY(-TURRET_TURN);
+		characters[TARGET_ID]->transform.rotateY(-TURRET_TURN);
+		characters[SWIVEL_ID]->transform.rotateY(-TURRET_TURN);
 		glutPostRedisplay();
 	}
 }
@@ -387,19 +455,19 @@ GLvoid SpecialKeysUp(int key, int x, int y){
 
 bool HandleKeyboardInput(){
 	if(specialKeys[GLUT_KEY_LEFT]){
-		camera.transform.rotateY(-TANK_TURN);
+		camera->transform.rotateY(-TANK_TURN);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_RIGHT]){
-		camera.transform.rotateY(TANK_TURN);
+		camera->transform.rotateY(TANK_TURN);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_UP]){
-		camera.transform.translate(0.0,0.0,TANK_SPEED);
+		camera->transform.translate(0.0,0.0,TANK_SPEED);
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_DOWN]){
-		camera.transform.translate(0.0,0.0,-TANK_SPEED);
+		camera->transform.translate(0.0,0.0,-TANK_SPEED);
 		return true;
 	}
 	return false;

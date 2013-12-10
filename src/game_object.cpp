@@ -10,9 +10,9 @@ game_object::game_object(int id, int geo_id, int tex_id, int health)
 
 game_object::~game_object(){}
 
-void game_object::parent_to(game_object &o)
+void game_object::parent_to(game_object *o)
 {
-	parent = &o;
+	parent = o;
 }
 
 GLdouble* game_object::get_transform()

@@ -23,7 +23,7 @@ class game_object{
 public:
 	game_object(int id, int geo_id, int tex_id, int health=1);
 	~game_object();
-	void parent_to(game_object &o);
+	void parent_to(game_object *o);
 	GLdouble* get_transform();
 	// add_child(game_object &o);
 	// remove_child(int child_id);
