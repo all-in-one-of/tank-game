@@ -25,9 +25,10 @@ public:
 	~game_object();
 	void parent_to(game_object *o);
 	GLdouble* get_transform();
+	mat4 get_transform_mat();
 	// add_child(game_object &o);
 	// remove_child(int child_id);
-	int health;
+	bool dead;
 	int id;
 	int geo;
 	int tex;

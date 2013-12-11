@@ -12,6 +12,7 @@
 #include <math.h>
 #include <vector>
 #include <stddef.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include "vec4.h"
@@ -50,8 +51,10 @@ double TANK_TURN = 1.0;
 double TANK_SPEED = 0.1;
 double TURRET_TURN = 1.0;
 double TURRET_SPEED = .1;
+double TARGET_RADIUS = 1.0;
 
 double BAD_GUY_SPEED = 0.01;
+int BAD_GUY_COUNT = 10;
 double last_update;
 double UPDATE_INC = 0.05;
 
@@ -200,6 +203,7 @@ GLvoid InitGL(){
 	game_object *hero_character = new game_object(characters.size(), HERO_ID, HERO_TEX);
 	characters.push_back(hero_character);
 	game_object *enemy_character = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
+	enemy_character->transform.translate(5.0, 0.0, -5.0);
 	enemy_character->parent_to(camera);
 	characters.push_back(enemy_character);
 	game_object *environment_character = new game_object(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
@@ -212,21 +216,22 @@ GLvoid InitGL(){
 	swivel_character->transform.translate(0.0,0.4,0.0);
 	characters.push_back(swivel_character);
 	game_object *barrel_character = new game_object(characters.size(), BARREL_ID, BARREL_TEX);
-	// barrel_character.transform.translate(0.0,0.4,0.0);
 	barrel_character->parent_to(characters[SWIVEL_ID]);
 	characters.push_back(barrel_character);
 	bad_guys.push_back(ENEMY_ID);
-	for(int i=0; i<10; i++)
+
+	srand(time(NULL));
+
+	int spread = 12;
+	for(int i=1; i<BAD_GUY_COUNT; i++)
 	{
 		game_object *enemyX = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
-		enemyX->transform.translate(i*1.0, 0.0, i*1.0);
+		// enemyX->transform.translate(rand()%spread-spread/2, 0.0, rand()%spread-spread/2);
+		enemyX->transform.translate(i*1.0, 0.0, i*-1.0);
 		enemyX->parent_to(camera);
 		bad_guys.push_back(characters.size());
 		characters.push_back(enemyX);
-		bad_guys.push_back(ENEMY_ID);
 	}
-	// clock_t start = clock();
-	// (double)time_gone_by / ((double)CLOCKS_PER_SEC)
 	last_update = (double)clock() / ((double)CLOCKS_PER_SEC);
 
 	//GL boilerplate initialization
@@ -240,6 +245,13 @@ GLvoid InitGL(){
 	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
 	glEnable(GL_COLOR_MATERIAL);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	std::cout << "HERO_ID: " << HERO_ID << std::endl;
+	std::cout << "ENEMY_ID: " << ENEMY_ID << std::endl;
+	std::cout << "ENVIRONMENT_ID: " << ENVIRONMENT_ID << std::endl;
+	std::cout << "TARGET_ID: " << TARGET_ID << std::endl;
+	std::cout << "SWIVEL_ID: " << SWIVEL_ID << std::endl;
+	std::cout << "BARREL_ID: " << BARREL_ID << std::endl;
 } 
 
 void DrawObj(mesh& m)
@@ -271,49 +283,18 @@ GLvoid DrawGLScene(){
 	// glRotatef(5.0,1,0,0);
     
     glViewport(0, 0, windowWidth, windowHeight);
-    // glTranslatef(0.0f, 0.0f, -5.0f);
 
     for(int i=0; i<characters.size(); i++)
     {
-    	glBindTexture(GL_TEXTURE_2D, characters[i]->tex);
-    	glPushMatrix();
-    	glMultMatrixd(characters[i]->get_transform());
-    	DrawObj(meshes[characters[i]->geo]);
-    	// glMultMatrixd(initial_transform.get_transform());
-    	// if(i==BARREL_ID)
-    	// {
-    	// DrawObj(meshes[characters[HERO_ID].geo]);
-    	// std::cout << "drew barrel" << std::endl;
-    	// }
-    	// else
-    	// {
-    	// DrawObj(meshes[characters[TARGET_ID].geo]);
-    	// }
-    	glPopMatrix();
-    	// if(i==BARREL_ID)
-    	// {
-    	// for(int j=0; j<4; j++)
-    	// {
-    	// 	for(int k=0; k<4; k++)
-    	// 	{
-    	// 		std::cout << characters[i]->parent->transform(k,j) << " ";
-    	// 	}
-    	// 	std::cout << std::endl;
-    	// }
-    	// // 	std::cout << characters[i].transform(0,3) << characters[i].transform(1,3)<< characters[i].transform(2,3) << std::endl;
-    	// }
+    	if(!characters[i]->dead)
+    	{
+	    	glBindTexture(GL_TEXTURE_2D, characters[i]->tex);
+	    	glPushMatrix();
+	    	glMultMatrixd(characters[i]->get_transform());
+	    	DrawObj(meshes[characters[i]->geo]);
+	    	glPopMatrix();
+    	}
     }
-
- //    double now = (double)clock() / ((double)CLOCKS_PER_SEC);
- //    if(now - last_update > UPDATE_INC)
- //    {
-	//     for(int i=0; i<bad_guys.size(); i++)
-	//     {
-	//     	vec4 pos = characters[bad_guys[i]]transform*vec4(0,0,0);
-	//     	pos.normalize();
-	//     	characters[bad_guys[i]].transform.translate(-pos.x, -pos.y, -pos.z);
-	//     }
-	// }
     glFlush();
 	glutSwapBuffers();
 }
@@ -323,18 +304,18 @@ GLvoid IdleGLScene(){
 	{	
 		glutPostRedisplay();
 	}
-	double now = (double)clock() / ((double)CLOCKS_PER_SEC);
-    if(now - last_update > UPDATE_INC)
-    {
-	    for(int i=0; i<bad_guys.size(); i++)
-	    {
-	    	vec4 pos = characters[bad_guys[i]]->transform*vec4(0,0,0);
-	    	pos.normalize();
-	    	pos *= BAD_GUY_SPEED;
-	    	characters[bad_guys[i]]->transform.translate(-pos.x, -pos.y, -pos.z);
-	    }
-	    glutPostRedisplay();
-	}
+	// double now = (double)clock() / ((double)CLOCKS_PER_SEC);
+    // if(now - last_update > UPDATE_INC)
+    // {
+	//     for(int i=0; i<bad_guys.size(); i++)
+	//     {
+	//     	vec4 pos = characters[bad_guys[i]]->transform*vec4(0,0,0);
+	//     	pos.normalize();
+	//     	pos *= BAD_GUY_SPEED;
+	//     	characters[bad_guys[i]]->transform.translate(-pos.x, -pos.y, -pos.z);
+	//     }
+	//     glutPostRedisplay();
+	// }
 }
 
 GLvoid ResizeGLScene(int width, int height){
@@ -355,11 +336,43 @@ GLvoid ResizeGLScene(int width, int height){
 
 bool test_collisions()
 {
-	vec4 pos = characters[TARGET_ID]->transform*vec4(0,0,0);
+	vec4 target_pos = characters[TARGET_ID]->get_transform_mat()*vec4(0,0,0);
 	for(int i=0; i<bad_guys.size(); i++)
 	{
+		if(characters[bad_guys[i]]->dead) continue;
+		mat4 bad_guy_mat = characters[bad_guys[i]]->get_transform_mat();
+		vec4 bad_guy_pos = bad_guy_mat*vec4(0,0,0);
+		vec4 dist_vec = target_pos - bad_guy_pos;
+		double dist = dist_vec.length();
+		// std::cout << dist << std::endl;
+		if(dist<TARGET_RADIUS)
+		{
+			characters[bad_guys[i]]->dead = true;
+			return true;
+		}
+		
+		// vec4 bb_max(meshes[characters[bad_guys[i]]->geo].xmax + TARGET_RADIUS,
+		// 			meshes[characters[bad_guys[i]]->geo].ymax + TARGET_RADIUS,
+		// 			meshes[characters[bad_guys[i]]->geo].zmax + TARGET_RADIUS);
+		// vec4 bb_min(meshes[characters[bad_guys[i]]->geo].xmin - TARGET_RADIUS,
+		// 			meshes[characters[bad_guys[i]]->geo].ymin - TARGET_RADIUS,
+		// 			meshes[characters[bad_guys[i]]->geo].zmin - TARGET_RADIUS);
+		// bb_max *= bad_guy_mat;
+		// bb_min *= bad_guy_mat;
 
-	}
+		// std::cout << "target position: " << target_pos.x << " " << target_pos.z << std::endl;
+		// std::cout << "bb max: " << bb_max.x << " " << bb_max.z << std::endl;
+		// std::cout << "bb min: " << bb_min.x << " " << bb_min.z << std::endl;
+
+		// if(target_pos.x<bb_max.x&&target_pos.z<bb_max.z&&
+		//    target_pos.x>bb_min.x&&target_pos.z>bb_min.z)
+		// {
+		// 	characters[bad_guys[i]]->dead = true;
+		// 	break;
+		// }
+	} 
+
+	return false;
 }
 
 /*
@@ -370,7 +383,11 @@ bool test_collisions()
 GLvoid GLKeyDown(unsigned char key, int x, int y){
 	if(key==' ')
 	{
-		
+		if(test_collisions())
+		{
+			glutPostRedisplay();
+		}
+		// std::cout << "*******************************" << std::endl;
 	}
 	if(key=='w')
 	{

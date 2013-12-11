@@ -38,9 +38,22 @@ void mesh::readobj(std::string& filepath)
 		ss >> tok;
 		if (tok=="v")
 		{
+			// std::string sx, sy, sz;
+			// ss >> sx >> sy >> sz;
+			// vec4 v(vec4(atof(sx.c_str()), atof(sy.c_str()), atof(sz.c_str())));
+			// verts.push_back(v);
 			std::string sx, sy, sz;
 			ss >> sx >> sy >> sz;
-			vec4 v(vec4(atof(sx.c_str()), atof(sy.c_str()), atof(sz.c_str())));
+			double px = atof(sx.c_str());
+			double py = atof(sy.c_str());
+			double pz = atof(sz.c_str());
+			if(px>xmax) xmax = px;
+			if(py>ymax) ymax = py;
+			if(pz>zmax) zmax = pz;
+			if(px<xmin) xmin = px;
+			if(py<ymin) ymin = py;
+			if(pz<zmin) zmin = pz;
+			vec4 v(px, py, pz);
 			verts.push_back(v);
 		}
 		else if (tok=="vt")

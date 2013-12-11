@@ -33,6 +33,12 @@ public:
 
 	void readobj(std::string& filepath);
 
+	double xmin;
+	double xmax;
+	double ymin;
+	double ymax;
+	double zmin;
+	double zmax;
 };
 
 #endif

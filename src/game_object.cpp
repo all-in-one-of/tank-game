@@ -6,6 +6,7 @@ game_object::game_object(int id, int geo_id, int tex_id, int health)
 	this->geo = geo_id;
 	this->tex = tex_id;
 	parent = NULL;
+	this->dead = false;
 }
 
 game_object::~game_object(){}
@@ -16,6 +17,20 @@ void game_object::parent_to(game_object *o)
 }
 
 GLdouble* game_object::get_transform()
+{
+	mat4 total_transform;// = this->transform;
+	
+	total_transform = get_transform_mat();
+	for(int i=0; i<16; i++)
+	{
+		int x = i/4;
+		int y = i%4;
+		transform_gl[i] = total_transform(y,x);
+	}
+	return transform_gl;
+}
+
+mat4 game_object::get_transform_mat()
 {
 	mat4 total_transform;// = this->transform;
 	game_object *cur_parent = parent;
@@ -32,13 +47,7 @@ GLdouble* game_object::get_transform()
 		total_transform *= parents[p]->transform;
 	}
 	total_transform *= this->transform;
-	for(int i=0; i<16; i++)
-	{
-		int x = i/4;
-		int y = i%4;
-		transform_gl[i] = total_transform(y,x);
-	}
-	return transform_gl;
+	return total_transform;
 }
 
 // game_object::add_child(game_object &o)
