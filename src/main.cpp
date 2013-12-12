@@ -225,9 +225,9 @@ GLvoid InitGL(){
 	barrel_character->parent_to(characters[SWIVEL_ID]);
 	characters.push_back(barrel_character);
 	game_object *environment_character = new game_object(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
-	environment_character->transform.scale(1.0,1.0,1.0);
+	environment_character->transform.scale(TILES_DIMENSION,TILES_DIMENSION,TILES_DIMENSION);
 	environment_character->parent_to(camera);
-	// characters.push_back(environment_character);
+	characters.push_back(environment_character);
 	// game_object *enemy_character = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
 	// enemy_character->transform.translate(0.0, 0.0, -7.0);
 	// enemy_character->parent_to(camera);
