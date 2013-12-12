@@ -40,6 +40,8 @@ int BARREL_ID = 3;
 int ENVIRONMENT_ID = 4;
 int ENEMY_ID = 5;
 int TILE_ID = 6;
+int TREE_ID = 7;
+int ROCK_ID = 8;
 GLuint HERO_TEX = 0;
 GLuint TARGET_TEX = 1;
 GLuint SWIVEL_TEX = 2;
@@ -47,6 +49,8 @@ GLuint BARREL_TEX = 3;
 GLuint ENVIRONMENT_TEX = 4;
 GLuint ENEMY_TEX = 5;
 GLuint TILE_TEX = 6;
+GLuint TREE_TEX = 7;
+GLuint ROCK_TEX = 8;
 
 int TILES_DIMENSION = 20;
 
@@ -163,6 +167,8 @@ GLvoid InitGL(){
 	std::string environment_geo_file = "geo/cube.obj";
 	std::string enemy_geo_file = "geo/enemy.obj";
 	std::string tile_geo_file = "geo/tile.obj";
+	std::string tree_geo_file = "geo/tree.obj";
+	std::string rock_geo_file = "geo/rocks.obj";
 
 	std::string hero_tex_file = "tex/tank.ppm";
 	std::string target_tex_file = "tex/target.ppm";
@@ -171,6 +177,8 @@ GLvoid InitGL(){
 	std::string environment_tex_file = "tex/ParkingLot.ppm";
 	std::string enemy_tex_file = "tex/enemy.ppm";
 	std::string tile_tex_file = "tex/naked_tile_baked.ppm";
+	std::string tree_tex_file = "tex/tree.ppm";
+	std::string rock_tex_file = "tex/rocks.ppm";
 
 	mesh hero(hero_geo_file);
 	mesh target(target_geo_file);
