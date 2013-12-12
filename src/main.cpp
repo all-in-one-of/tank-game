@@ -170,7 +170,7 @@ GLvoid InitGL(){
 	std::string barrel_tex_file = "tex/barrel.ppm";
 	std::string environment_tex_file = "tex/ParkingLot.ppm";
 	std::string enemy_tex_file = "tex/enemy.ppm";
-	std::string tile_tex_file = "tex/ParkingLot.ppm";
+	std::string tile_tex_file = "tex/naked_tile_baked.ppm";
 
 	mesh hero(hero_geo_file);
 	mesh target(target_geo_file);
@@ -256,7 +256,10 @@ GLvoid InitGL(){
 		for(int j=0; j<TILES_DIMENSION; j++)
 		{
 			int zmult = j - TILES_DIMENSION/2;
+			double rot = rand() % 4 * 90.0;
+			std::cout << rot << std::endl;
 			game_object *tileX = new game_object(characters.size(), TILE_ID, TILE_TEX);
+			tileX->transform.rotateY(rot);
 			tileX->transform.translate(tile_width*xmult, 0.0, tile_length*zmult);
 			tileX->parent_to(camera);
 			characters.push_back(tileX);
