@@ -37,22 +37,24 @@ int HERO_ID = 0;
 int TARGET_ID = 1;
 int SWIVEL_ID = 2;
 int BARREL_ID = 3;
-int ENEMY_ID = 4;
-int ENVIRONMENT_ID = 5;
+int ENVIRONMENT_ID = 4;
+int ENEMY_ID = 5;
+int TILE_ID = 6;
 GLuint HERO_TEX = 0;
 GLuint TARGET_TEX = 1;
 GLuint SWIVEL_TEX = 2;
 GLuint BARREL_TEX = 3;
-GLuint ENEMY_TEX = 4;
-GLuint ENVIRONMENT_TEX = 5;
+GLuint ENVIRONMENT_TEX = 4;
+GLuint ENEMY_TEX = 5;
+GLuint TILE_TEX = 6;
 
-int TILES_DIMENSION = 3;
+int TILES_DIMENSION = 20;
 
 double TANK_TURN = 1.0;
 double TANK_SPEED = 0.1;
 double TURRET_TURN = 1.0;
 double TURRET_SPEED = .1;
-double TARGET_RADIUS = 1.0;
+double TARGET_RADIUS = 0.5;
 
 double BAD_GUY_SPEED = 0.01;
 int BAD_GUY_COUNT = 10;
@@ -145,7 +147,9 @@ int loadPPM(const char *filename, GLuint textureID) {
 
     //Create mipmaps
     gluBuild2DMipmaps(GL_TEXTURE_2D, 4, (GLuint)width, (GLuint)height, GL_RGBA, GL_UNSIGNED_BYTE, theTexture);
-
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glScalef(1.0,-1.0,1.0);
     free(theTexture);
     return(textureID);
 }
@@ -156,22 +160,25 @@ GLvoid InitGL(){
 	std::string target_geo_file = "geo/target.obj";
 	std::string swivel_geo_file = "geo/turret.obj";
 	std::string barrel_geo_file = "geo/barrel.obj";
+	std::string environment_geo_file = "geo/cube.obj";
 	std::string enemy_geo_file = "geo/enemy.obj";
-	std::string environment_geo_file = "geo/ParkingLot.obj";
+	std::string tile_geo_file = "geo/tile.obj";
 
 	std::string hero_tex_file = "tex/tank.ppm";
 	std::string target_tex_file = "tex/target.ppm";
 	std::string swivel_tex_file = "tex/turret.ppm";
 	std::string barrel_tex_file = "tex/barrel.ppm";
-	std::string enemy_tex_file = "tex/enemy.ppm";
 	std::string environment_tex_file = "tex/ParkingLot.ppm";
+	std::string enemy_tex_file = "tex/enemy.ppm";
+	std::string tile_tex_file = "tex/ParkingLot.ppm";
 
 	mesh hero(hero_geo_file);
-	mesh enemy(enemy_geo_file);
-	mesh environment(environment_geo_file);
 	mesh target(target_geo_file);
 	mesh swivel(swivel_geo_file);
 	mesh barrel(barrel_geo_file);
+	mesh environment(environment_geo_file);
+	mesh enemy(enemy_geo_file);
+	mesh tile(tile_geo_file);
 	HERO_ID = meshes.size();
 	meshes.push_back(hero);
 	TARGET_ID = meshes.size();
@@ -180,24 +187,28 @@ GLvoid InitGL(){
 	meshes.push_back(swivel);
 	BARREL_ID = meshes.size();
 	meshes.push_back(barrel);
-	ENEMY_ID = meshes.size();
-	meshes.push_back(enemy);
 	ENVIRONMENT_ID = meshes.size();
 	meshes.push_back(environment);
+	ENEMY_ID = meshes.size();
+	meshes.push_back(enemy);
+	TILE_ID = meshes.size();
+	meshes.push_back(tile);
 
 	glEnable(GL_TEXTURE_2D);
 	glGenTextures(1, &HERO_TEX);
 	glGenTextures(1, &TARGET_TEX);
 	glGenTextures(1, &SWIVEL_TEX);
 	glGenTextures(1, &BARREL_TEX);
-	glGenTextures(1, &ENEMY_TEX);
 	glGenTextures(1, &ENVIRONMENT_TEX);
+	glGenTextures(1, &ENEMY_TEX);
+	glGenTextures(1, &TILE_TEX);
 	loadPPM(hero_tex_file.c_str(), HERO_TEX);
 	loadPPM(target_tex_file.c_str(), TARGET_TEX);
 	loadPPM(swivel_tex_file.c_str(), SWIVEL_TEX);
 	loadPPM(barrel_tex_file.c_str(), BARREL_TEX);
-	loadPPM(enemy_tex_file.c_str(), ENEMY_TEX);
 	loadPPM(environment_tex_file.c_str(), ENVIRONMENT_TEX);
+	loadPPM(enemy_tex_file.c_str(), ENEMY_TEX);
+	loadPPM(tile_tex_file.c_str(), TILE_TEX);
 
 	camera = new game_object(-1,-1,-1);
 
@@ -213,13 +224,14 @@ GLvoid InitGL(){
 	barrel_character->transform.translate(0.0,0.0,-0.15);
 	barrel_character->parent_to(characters[SWIVEL_ID]);
 	characters.push_back(barrel_character);
+	game_object *environment_character = new game_object(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
+	environment_character->transform.scale(1.0,1.0,1.0);
+	environment_character->parent_to(camera);
+	// characters.push_back(environment_character);
 	// game_object *enemy_character = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
 	// enemy_character->transform.translate(0.0, 0.0, -7.0);
 	// enemy_character->parent_to(camera);
 	// characters.push_back(enemy_character);
-	// game_object *environment_character = new game_object(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
-	// environment_character->parent_to(camera);
-	// characters.push_back(environment_character);
 	// bad_guys.push_back(ENEMY_ID);
 
 	srand(time(NULL));
@@ -236,15 +248,15 @@ GLvoid InitGL(){
 		characters.push_back(enemyX);
 	}
 
-	double tile_width = meshes[ENVIRONMENT_ID].xmax - meshes[ENVIRONMENT_ID].xmin;
-	double tile_length = meshes[ENVIRONMENT_ID].zmax - meshes[ENVIRONMENT_ID].zmin;
+	double tile_width = meshes[TILE_ID].xmax - meshes[TILE_ID].xmin;
+	double tile_length = meshes[TILE_ID].zmax - meshes[TILE_ID].zmin;
 	for(int i=0; i<TILES_DIMENSION; i++)
 	{
 		int xmult = i - TILES_DIMENSION/2;
 		for(int j=0; j<TILES_DIMENSION; j++)
 		{
 			int zmult = j - TILES_DIMENSION/2;
-			game_object *tileX = new game_object(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
+			game_object *tileX = new game_object(characters.size(), TILE_ID, TILE_TEX);
 			tileX->transform.translate(tile_width*xmult, 0.0, tile_length*zmult);
 			tileX->parent_to(camera);
 			characters.push_back(tileX);
@@ -346,7 +358,7 @@ GLvoid ResizeGLScene(int width, int height){
 	glutPostRedisplay();
 }
 
-bool test_collisions()
+bool test_hits()
 {
 	vec4 target_pos = characters[TARGET_ID]->get_transform_mat()*vec4(0,0,0);
 	for(int i=0; i<bad_guys.size(); i++)
@@ -357,7 +369,7 @@ bool test_collisions()
 		vec4 dist_vec = target_pos - bad_guy_pos;
 		double dist = dist_vec.length();
 		// std::cout << dist << std::endl;
-		if(dist<TARGET_RADIUS)
+		if(dist<TARGET_RADIUS+meshes[characters[bad_guys[i]]->geo].rad)
 		{
 			characters[bad_guys[i]]->dead = true;
 			return true;
@@ -390,7 +402,7 @@ bool test_collisions()
 GLvoid GLKeyDown(unsigned char key, int x, int y){
 	if(key==' ')
 	{
-		if(test_collisions())
+		if(test_hits())
 		{
 			glutPostRedisplay();
 		}
@@ -478,21 +490,56 @@ GLvoid SpecialKeysUp(int key, int x, int y){
 	}
 }
 
+bool test_collisions()
+{
+	vec4 hero_pos = characters[HERO_ID]->get_transform_mat()*vec4(0,0,0);
+	for(int i=0; i<colliders.size(); i++)
+	{
+		if(characters[colliders[i]]->dead) continue;
+		mat4 collider_mat = characters[colliders[i]]->get_transform_mat();
+		vec4 collider_pos = collider_mat*vec4(0,0,0);
+		vec4 dist_vec = hero_pos - collider_pos;
+		double dist = dist_vec.length();
+		if(dist<meshes[HERO_ID].rad+meshes[characters[colliders[i]]->geo].rad)
+		{
+			// characters[bad_guys[i]]->dead = true;
+			return true;
+		}
+	}
+	return false;
+}
+
 bool HandleKeyboardInput(){
 	if(specialKeys[GLUT_KEY_LEFT]){
 		camera->transform.rotateY(-TANK_TURN);
+		if(test_collisions())
+		{
+			camera->transform.rotateY(TANK_TURN);
+		}
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_RIGHT]){
 		camera->transform.rotateY(TANK_TURN);
+		if(test_collisions())
+		{
+			camera->transform.rotateY(-TANK_TURN);
+		}
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_UP]){
 		camera->transform.translate(0.0,0.0,TANK_SPEED);
+		if(test_collisions())
+		{
+			camera->transform.translate(0.0,0.0,-TANK_SPEED);
+		}
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_DOWN]){
 		camera->transform.translate(0.0,0.0,-TANK_SPEED);
+		if(test_collisions())
+		{
+			camera->transform.translate(0.0,0.0,TANK_SPEED);
+		}
 		return true;
 	}
 	return false;
