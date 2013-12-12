@@ -53,8 +53,9 @@ GLuint TREE_TEX = 7;
 GLuint ROCK_TEX = 8;
 GLuint TREETILE_TEX = 9;
 GLuint ROCKTILE_TEX = 10;
+GLuint BLOBTILE_TEX = 11;
 
-int TILES_DIMENSION = 20;
+int TILES_DIMENSION = 50;
 
 double TANK_TURN = 1.0;
 double TANK_SPEED = 0.1;
@@ -82,13 +83,13 @@ GLvoid ResizeGLScene(int width, int height);
 GLvoid GLKeyDown(unsigned char key, int x, int y);
 GLvoid SpecialKeys(int key, int x, int y);
 GLvoid SpecialKeysUp(int key, int x, int y);
-int loadPPM(const char *filename, GLuint textureID);
+int loadPPM(const char *filename, GLuint textureID, bool do_alpha=false);
 void DrawObj(mesh& m, mat4& t);
 
 /*
 Function taken from www.cs.utexas.edu texture.cpp
 */
-int loadPPM(const char *filename, GLuint textureID) {
+int loadPPM(const char *filename, GLuint textureID, bool do_alpha) {
 
 	//GLuint textureID = 0; 
     FILE *inFile; //File pointer
@@ -134,6 +135,12 @@ int loadPPM(const char *filename, GLuint textureID) {
 		if ((i % 4) < 3 || pixelSize == 4) {
 			c = fgetc(inFile);
 			theTexture[i]=(GLubyte) c;
+        }
+        else if (do_alpha){
+        	theTexture[i] = (GLubyte) (255 - theTexture[i-1]);
+        	theTexture[i-3] = (GLubyte) 0;
+        	theTexture[i-2] = (GLubyte) 0;
+        	theTexture[i-1] = (GLubyte) 0;
         }
 		else theTexture[i] = (GLubyte) 255; //Set alpha to opaque
     }
@@ -183,6 +190,7 @@ GLvoid InitGL(){
 	std::string rock_tex_file = "tex/rocks.ppm";
 	std::string tree_tile_tex = "tex/tree_tile.ppm";
 	std::string rock_tile_tex = "tex/rocky_tile.ppm";
+	std::string blob_tile_tex = "tex/blob_shadow.ppm";
 
 	mesh hero(hero_geo_file);
 	mesh target(target_geo_file);
@@ -224,6 +232,7 @@ GLvoid InitGL(){
 	glGenTextures(1, &ROCK_TEX);
 	glGenTextures(1, &TREETILE_TEX);
 	glGenTextures(1, &ROCKTILE_TEX);
+	glGenTextures(1, &BLOBTILE_TEX);
 	loadPPM(hero_tex_file.c_str(), HERO_TEX);
 	loadPPM(target_tex_file.c_str(), TARGET_TEX);
 	loadPPM(swivel_tex_file.c_str(), SWIVEL_TEX);
@@ -235,6 +244,7 @@ GLvoid InitGL(){
 	loadPPM(rock_tex_file.c_str(), ROCK_TEX);
 	loadPPM(tree_tile_tex.c_str(), TREETILE_TEX);
 	loadPPM(rock_tile_tex.c_str(), ROCKTILE_TEX);
+	loadPPM(blob_tile_tex.c_str(), BLOBTILE_TEX, true);
 
 	camera = new game_object(-1,-1,-1);
 
@@ -254,6 +264,7 @@ GLvoid InitGL(){
 	environment_character->transform.scale(TILES_DIMENSION,TILES_DIMENSION,TILES_DIMENSION);
 	environment_character->parent_to(camera);
 	characters.push_back(environment_character);
+	
 	// game_object *enemy_character = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
 	// enemy_character->transform.translate(0.0, 0.0, -7.0);
 	// enemy_character->parent_to(camera);
@@ -262,7 +273,7 @@ GLvoid InitGL(){
 
 	srand(time(NULL));
 
-	int spread = 22;
+	int spread = TILES_DIMENSION;
 	for(int i=1; i<BAD_GUY_COUNT; i++)
 	{
 		game_object *enemyX = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
@@ -290,27 +301,33 @@ GLvoid InitGL(){
 			tileX->parent_to(camera);
 			characters.push_back(tileX);
 			int tile_type = rand() % 100;
-			if(tile_type >= 90 && tile_type < 95)
+			if(tile_type >= 96 && tile_type < 98)
 			{
 				tileX->tex = TREETILE_TEX;
 				game_object *treeX = new game_object(characters.size(), TREE_ID, TREE_TEX);
 				treeX->transform = tileX->transform;
 				treeX->parent_to(camera);
 				bad_guys.push_back(characters.size());
+				colliders.push_back(characters.size());
 				characters.push_back(treeX);
 			}
-			else if(tile_type >= 95)
+			else if(tile_type >= 98)
 			{
 				tileX->tex = ROCKTILE_TEX;
 				game_object *rockX = new game_object(characters.size(), ROCK_ID, ROCK_TEX);
 				rockX->transform = tileX->transform;
 				rockX->parent_to(camera);
 				bad_guys.push_back(characters.size());
+				colliders.push_back(characters.size());
 				characters.push_back(rockX);
 			}
 			
 		}
 	}
+	game_object *blob_character = new game_object(characters.size(), TILE_ID, BLOBTILE_TEX);
+	blob_character->transform.translate(0.0,0.001,0.0);
+	blob_character->transform.scale(2.0, 1.0, 3.0);
+	characters.push_back(blob_character);
 
 	last_update = (double)clock() / ((double)CLOCKS_PER_SEC);
 
@@ -319,12 +336,15 @@ GLvoid InitGL(){
 	glClearColor(0.5f, 0.5f, 0.5f, 0.5f);				// grey Background
 	glClearDepth(1.0f);									// Depth Buffer Setup
 	glEnable(GL_DEPTH_TEST);							// Enables Depth Testing				
-	
+
 	glEnable(GL_CULL_FACE);
 	glShadeModel(GL_SMOOTH);
 	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
 	glEnable(GL_COLOR_MATERIAL);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	glEnable (GL_BLEND);
+	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 } 
 
 void DrawObj(mesh& m)
