@@ -25,8 +25,8 @@
 #define KEYBOARD_F 102
 #define NORMAL_EXIT_GLUT_LOOP "terminating glut"
 
-int windowWidth = 640;
-int windowHeight = 480;
+int windowWidth = 1280;
+int windowHeight = 960;
 bool specialKeys[1000] = {0};
 
 std::vector<mesh> meshes;
@@ -63,7 +63,7 @@ int turret_translate = 0;
 int MIN_TURRET_ROTATE = -30;
 int MAX_TURRET_ROTATE = 30;
 int MIN_TURRET_TRANSLATE = 7.0;
-int MAX_TURRET_TRANSLATE = 11.0;
+int MAX_TURRET_TRANSLATE = 14.0;
 
 bool HandleKeyboardInput();
 GLvoid InitGL();
@@ -151,18 +151,18 @@ int loadPPM(const char *filename, GLuint textureID) {
 
 GLvoid InitGL(){
 	//All the stuff we need to draw
-	std::string hero_geo_file = "geo/car.obj";
-	std::string enemy_geo_file = "geo/tire.obj";
+	std::string hero_geo_file = "geo/tank.obj";
+	std::string enemy_geo_file = "geo/enemy.obj";
 	std::string environment_geo_file = "geo/ParkingLot.obj";
 	std::string target_geo_file = "geo/target.obj";
-	std::string swivel_geo_file = "geo/swivel.obj";
+	std::string swivel_geo_file = "geo/turret.obj";
 	std::string barrel_geo_file = "geo/barrel.obj";
 
-	std::string hero_tex_file = "tex/car.ppm";
-	std::string enemy_tex_file = "tex/tire.ppm";
+	std::string hero_tex_file = "tex/tank.ppm";
+	std::string enemy_tex_file = "tex/enemy.ppm";
 	std::string environment_tex_file = "tex/ParkingLot.ppm";
 	std::string target_tex_file = "tex/target.ppm";
-	std::string swivel_tex_file = "tex/swivel.ppm";
+	std::string swivel_tex_file = "tex/turret.ppm";
 	std::string barrel_tex_file = "tex/barrel.ppm";
 
 	mesh hero(hero_geo_file);
@@ -201,6 +201,7 @@ GLvoid InitGL(){
 	camera = new game_object(-1,-1,-1);
 
 	game_object *hero_character = new game_object(characters.size(), HERO_ID, HERO_TEX);
+	// hero_character->transform.rotateY(180.0);
 	characters.push_back(hero_character);
 	game_object *enemy_character = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
 	enemy_character->transform.translate(5.0, 0.0, -5.0);
@@ -216,18 +217,20 @@ GLvoid InitGL(){
 	swivel_character->transform.translate(0.0,0.4,0.0);
 	characters.push_back(swivel_character);
 	game_object *barrel_character = new game_object(characters.size(), BARREL_ID, BARREL_TEX);
+	barrel_character->transform.translate(0.0,0.0,-0.15);
 	barrel_character->parent_to(characters[SWIVEL_ID]);
 	characters.push_back(barrel_character);
 	bad_guys.push_back(ENEMY_ID);
 
 	srand(time(NULL));
 
-	int spread = 12;
+	int spread = 22;
 	for(int i=1; i<BAD_GUY_COUNT; i++)
 	{
 		game_object *enemyX = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
-		// enemyX->transform.translate(rand()%spread-spread/2, 0.0, rand()%spread-spread/2);
-		enemyX->transform.translate(i*1.0, 0.0, i*-1.0);
+		enemyX->transform.translate(rand()%spread-spread/2, 0.0, rand()%spread-spread/2);
+		enemyX->transform.rotateY(rand()%180);
+		// enemyX->transform.translate(i*1.0, 0.0, i*-1.0);
 		enemyX->parent_to(camera);
 		bad_guys.push_back(characters.size());
 		characters.push_back(enemyX);
@@ -493,8 +496,8 @@ bool HandleKeyboardInput(){
 int main(int argc, char* argv[])
 {
 	char windowName[] = "TANK X";
-	int windowWidth = 640;
-	int windowHeight = 480;
+	// int windowWidth = 640;
+	// int windowHeight = 480;
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
 	glutInitWindowSize(windowWidth, windowHeight);
