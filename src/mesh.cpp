@@ -20,6 +20,7 @@ mesh::mesh(){}
 mesh::mesh(std::string filepath)
 {
 	readobj(filepath);
+	this->rad = xmax > ymax ? xmax : ymax;
 }
 
 void mesh::readobj(std::string& filepath)

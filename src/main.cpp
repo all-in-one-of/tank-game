@@ -20,10 +20,8 @@
 #include "mesh.h"
 #include "game_object.h"
 
-#define KEYBOARD_S 115
 #define KEYBOARD_ESC 27
-#define KEYBOARD_F 102
-#define NORMAL_EXIT_GLUT_LOOP "terminating glut"
+
 
 int windowWidth = 1280;
 int windowHeight = 960;
@@ -32,26 +30,31 @@ bool specialKeys[1000] = {0};
 std::vector<mesh> meshes;
 std::vector<game_object*> characters;
 std::vector<int> bad_guys;
+std::vector<int> colliders;
 game_object *camera; //DO NOT DRAW
 
 int HERO_ID = 0;
-int ENEMY_ID = 1;
-int ENVIRONMENT_ID = 2;
-int TARGET_ID = 3;
-int SWIVEL_ID = 4;
-int BARREL_ID = 5;
+int TARGET_ID = 1;
+int SWIVEL_ID = 2;
+int BARREL_ID = 3;
+int ENVIRONMENT_ID = 4;
+int ENEMY_ID = 5;
+int TILE_ID = 6;
 GLuint HERO_TEX = 0;
-GLuint ENEMY_TEX = 1;
-GLuint ENVIRONMENT_TEX = 2;
-GLuint TARGET_TEX = 3;
-GLuint SWIVEL_TEX = 4;
-GLuint BARREL_TEX = 5;
+GLuint TARGET_TEX = 1;
+GLuint SWIVEL_TEX = 2;
+GLuint BARREL_TEX = 3;
+GLuint ENVIRONMENT_TEX = 4;
+GLuint ENEMY_TEX = 5;
+GLuint TILE_TEX = 6;
+
+int TILES_DIMENSION = 20;
 
 double TANK_TURN = 1.0;
 double TANK_SPEED = 0.1;
 double TURRET_TURN = 1.0;
 double TURRET_SPEED = .1;
-double TARGET_RADIUS = 1.0;
+double TARGET_RADIUS = 0.5;
 
 double BAD_GUY_SPEED = 0.01;
 int BAD_GUY_COUNT = 10;
@@ -144,7 +147,9 @@ int loadPPM(const char *filename, GLuint textureID) {
 
     //Create mipmaps
     gluBuild2DMipmaps(GL_TEXTURE_2D, 4, (GLuint)width, (GLuint)height, GL_RGBA, GL_UNSIGNED_BYTE, theTexture);
-
+    glMatrixMode(GL_TEXTURE);
+    glLoadIdentity();
+    glScalef(1.0,-1.0,1.0);
     free(theTexture);
     return(textureID);
 }
@@ -152,64 +157,63 @@ int loadPPM(const char *filename, GLuint textureID) {
 GLvoid InitGL(){
 	//All the stuff we need to draw
 	std::string hero_geo_file = "geo/tank.obj";
-	std::string enemy_geo_file = "geo/enemy.obj";
-	std::string environment_geo_file = "geo/ParkingLot.obj";
 	std::string target_geo_file = "geo/target.obj";
 	std::string swivel_geo_file = "geo/turret.obj";
 	std::string barrel_geo_file = "geo/barrel.obj";
+	std::string environment_geo_file = "geo/cube.obj";
+	std::string enemy_geo_file = "geo/enemy.obj";
+	std::string tile_geo_file = "geo/tile.obj";
 
 	std::string hero_tex_file = "tex/tank.ppm";
-	std::string enemy_tex_file = "tex/enemy.ppm";
-	std::string environment_tex_file = "tex/ParkingLot.ppm";
 	std::string target_tex_file = "tex/target.ppm";
 	std::string swivel_tex_file = "tex/turret.ppm";
 	std::string barrel_tex_file = "tex/barrel.ppm";
+	std::string environment_tex_file = "tex/ParkingLot.ppm";
+	std::string enemy_tex_file = "tex/enemy.ppm";
+	std::string tile_tex_file = "tex/ParkingLot.ppm";
 
 	mesh hero(hero_geo_file);
-	mesh enemy(enemy_geo_file);
-	mesh environment(environment_geo_file);
 	mesh target(target_geo_file);
 	mesh swivel(swivel_geo_file);
 	mesh barrel(barrel_geo_file);
+	mesh environment(environment_geo_file);
+	mesh enemy(enemy_geo_file);
+	mesh tile(tile_geo_file);
 	HERO_ID = meshes.size();
 	meshes.push_back(hero);
-	ENEMY_ID = meshes.size();
-	meshes.push_back(enemy);
-	ENVIRONMENT_ID = meshes.size();
-	meshes.push_back(environment);
 	TARGET_ID = meshes.size();
 	meshes.push_back(target);
 	SWIVEL_ID = meshes.size();
 	meshes.push_back(swivel);
 	BARREL_ID = meshes.size();
 	meshes.push_back(barrel);
+	ENVIRONMENT_ID = meshes.size();
+	meshes.push_back(environment);
+	ENEMY_ID = meshes.size();
+	meshes.push_back(enemy);
+	TILE_ID = meshes.size();
+	meshes.push_back(tile);
 
 	glEnable(GL_TEXTURE_2D);
 	glGenTextures(1, &HERO_TEX);
-	glGenTextures(1, &ENEMY_TEX);
-	glGenTextures(1, &ENVIRONMENT_TEX);
 	glGenTextures(1, &TARGET_TEX);
 	glGenTextures(1, &SWIVEL_TEX);
 	glGenTextures(1, &BARREL_TEX);
+	glGenTextures(1, &ENVIRONMENT_TEX);
+	glGenTextures(1, &ENEMY_TEX);
+	glGenTextures(1, &TILE_TEX);
 	loadPPM(hero_tex_file.c_str(), HERO_TEX);
-	loadPPM(enemy_tex_file.c_str(), ENEMY_TEX);
-	loadPPM(environment_tex_file.c_str(), ENVIRONMENT_TEX);
 	loadPPM(target_tex_file.c_str(), TARGET_TEX);
 	loadPPM(swivel_tex_file.c_str(), SWIVEL_TEX);
 	loadPPM(barrel_tex_file.c_str(), BARREL_TEX);
+	loadPPM(environment_tex_file.c_str(), ENVIRONMENT_TEX);
+	loadPPM(enemy_tex_file.c_str(), ENEMY_TEX);
+	loadPPM(tile_tex_file.c_str(), TILE_TEX);
 
 	camera = new game_object(-1,-1,-1);
 
 	game_object *hero_character = new game_object(characters.size(), HERO_ID, HERO_TEX);
-	// hero_character->transform.rotateY(180.0);
 	characters.push_back(hero_character);
-	game_object *enemy_character = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
-	enemy_character->transform.translate(5.0, 0.0, -5.0);
-	enemy_character->parent_to(camera);
-	characters.push_back(enemy_character);
-	game_object *environment_character = new game_object(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
-	environment_character->parent_to(camera);
-	characters.push_back(environment_character);
 	game_object *target_character = new game_object(characters.size(), TARGET_ID, TARGET_TEX);
 	target_character->transform.translate(0.0,0.0,-7.0);
 	characters.push_back(target_character);
@@ -220,7 +224,15 @@ GLvoid InitGL(){
 	barrel_character->transform.translate(0.0,0.0,-0.15);
 	barrel_character->parent_to(characters[SWIVEL_ID]);
 	characters.push_back(barrel_character);
-	bad_guys.push_back(ENEMY_ID);
+	game_object *environment_character = new game_object(characters.size(), ENVIRONMENT_ID, ENVIRONMENT_TEX);
+	environment_character->transform.scale(1.0,1.0,1.0);
+	environment_character->parent_to(camera);
+	// characters.push_back(environment_character);
+	// game_object *enemy_character = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
+	// enemy_character->transform.translate(0.0, 0.0, -7.0);
+	// enemy_character->parent_to(camera);
+	// characters.push_back(enemy_character);
+	// bad_guys.push_back(ENEMY_ID);
 
 	srand(time(NULL));
 
@@ -230,11 +242,27 @@ GLvoid InitGL(){
 		game_object *enemyX = new game_object(characters.size(), ENEMY_ID, ENEMY_TEX);
 		enemyX->transform.translate(rand()%spread-spread/2, 0.0, rand()%spread-spread/2);
 		enemyX->transform.rotateY(rand()%180);
-		// enemyX->transform.translate(i*1.0, 0.0, i*-1.0);
 		enemyX->parent_to(camera);
 		bad_guys.push_back(characters.size());
+		colliders.push_back(characters.size());
 		characters.push_back(enemyX);
 	}
+
+	double tile_width = meshes[TILE_ID].xmax - meshes[TILE_ID].xmin;
+	double tile_length = meshes[TILE_ID].zmax - meshes[TILE_ID].zmin;
+	for(int i=0; i<TILES_DIMENSION; i++)
+	{
+		int xmult = i - TILES_DIMENSION/2;
+		for(int j=0; j<TILES_DIMENSION; j++)
+		{
+			int zmult = j - TILES_DIMENSION/2;
+			game_object *tileX = new game_object(characters.size(), TILE_ID, TILE_TEX);
+			tileX->transform.translate(tile_width*xmult, 0.0, tile_length*zmult);
+			tileX->parent_to(camera);
+			characters.push_back(tileX);
+		}
+	}
+
 	last_update = (double)clock() / ((double)CLOCKS_PER_SEC);
 
 	//GL boilerplate initialization
@@ -248,13 +276,6 @@ GLvoid InitGL(){
 	glDepthFunc(GL_LEQUAL);								// The Type Of Depth Testing To Do
 	glEnable(GL_COLOR_MATERIAL);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-
-	std::cout << "HERO_ID: " << HERO_ID << std::endl;
-	std::cout << "ENEMY_ID: " << ENEMY_ID << std::endl;
-	std::cout << "ENVIRONMENT_ID: " << ENVIRONMENT_ID << std::endl;
-	std::cout << "TARGET_ID: " << TARGET_ID << std::endl;
-	std::cout << "SWIVEL_ID: " << SWIVEL_ID << std::endl;
-	std::cout << "BARREL_ID: " << BARREL_ID << std::endl;
 } 
 
 void DrawObj(mesh& m)
@@ -337,7 +358,7 @@ GLvoid ResizeGLScene(int width, int height){
 	glutPostRedisplay();
 }
 
-bool test_collisions()
+bool test_hits()
 {
 	vec4 target_pos = characters[TARGET_ID]->get_transform_mat()*vec4(0,0,0);
 	for(int i=0; i<bad_guys.size(); i++)
@@ -348,7 +369,7 @@ bool test_collisions()
 		vec4 dist_vec = target_pos - bad_guy_pos;
 		double dist = dist_vec.length();
 		// std::cout << dist << std::endl;
-		if(dist<TARGET_RADIUS)
+		if(dist<TARGET_RADIUS+meshes[characters[bad_guys[i]]->geo].rad)
 		{
 			characters[bad_guys[i]]->dead = true;
 			return true;
@@ -378,19 +399,13 @@ bool test_collisions()
 	return false;
 }
 
-/*
- * This function handles all normal key presses on the keyboard. If you need
- * to capture special keys like, ctrl, shift, F1, F2, F..., or arrow keys use
- * the special keys function
- */
 GLvoid GLKeyDown(unsigned char key, int x, int y){
 	if(key==' ')
 	{
-		if(test_collisions())
+		if(test_hits())
 		{
 			glutPostRedisplay();
 		}
-		// std::cout << "*******************************" << std::endl;
 	}
 	if(key=='w')
 	{
@@ -430,11 +445,13 @@ GLvoid GLKeyDown(unsigned char key, int x, int y){
 		characters[SWIVEL_ID]->transform.rotateY(-TURRET_TURN);
 		glutPostRedisplay();
 	}
+	if(key==KEYBOARD_ESC)
+	{
+		glutDestroyWindow(glutGetWindow());
+		exit(0);
+	}
 }
 
-/*
- * These are the special keys as is set apart by glut
- */
 GLvoid SpecialKeys(int key, int x, int y){
 	switch(key){
 		case GLUT_KEY_LEFT:
@@ -473,21 +490,56 @@ GLvoid SpecialKeysUp(int key, int x, int y){
 	}
 }
 
+bool test_collisions()
+{
+	vec4 hero_pos = characters[HERO_ID]->get_transform_mat()*vec4(0,0,0);
+	for(int i=0; i<colliders.size(); i++)
+	{
+		if(characters[colliders[i]]->dead) continue;
+		mat4 collider_mat = characters[colliders[i]]->get_transform_mat();
+		vec4 collider_pos = collider_mat*vec4(0,0,0);
+		vec4 dist_vec = hero_pos - collider_pos;
+		double dist = dist_vec.length();
+		if(dist<meshes[HERO_ID].rad+meshes[characters[colliders[i]]->geo].rad)
+		{
+			// characters[bad_guys[i]]->dead = true;
+			return true;
+		}
+	}
+	return false;
+}
+
 bool HandleKeyboardInput(){
 	if(specialKeys[GLUT_KEY_LEFT]){
 		camera->transform.rotateY(-TANK_TURN);
+		if(test_collisions())
+		{
+			camera->transform.rotateY(TANK_TURN);
+		}
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_RIGHT]){
 		camera->transform.rotateY(TANK_TURN);
+		if(test_collisions())
+		{
+			camera->transform.rotateY(-TANK_TURN);
+		}
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_UP]){
 		camera->transform.translate(0.0,0.0,TANK_SPEED);
+		if(test_collisions())
+		{
+			camera->transform.translate(0.0,0.0,-TANK_SPEED);
+		}
 		return true;
 	}
 	if(specialKeys[GLUT_KEY_DOWN]){
 		camera->transform.translate(0.0,0.0,-TANK_SPEED);
+		if(test_collisions())
+		{
+			camera->transform.translate(0.0,0.0,TANK_SPEED);
+		}
 		return true;
 	}
 	return false;
@@ -496,8 +548,6 @@ bool HandleKeyboardInput(){
 int main(int argc, char* argv[])
 {
 	char windowName[] = "TANK X";
-	// int windowWidth = 640;
-	// int windowHeight = 480;
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
 	glutInitWindowSize(windowWidth, windowHeight);
