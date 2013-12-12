@@ -39,6 +39,7 @@ public:
 	double ymax;
 	double zmin;
 	double zmax;
+	double rad;
 };
 
 #endif
