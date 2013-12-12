@@ -51,6 +51,8 @@ GLuint ENEMY_TEX = 5;
 GLuint TILE_TEX = 6;
 GLuint TREE_TEX = 7;
 GLuint ROCK_TEX = 8;
+GLuint TREETILE_TEX = 9;
+GLuint ROCKTILE_TEX = 10;
 
 int TILES_DIMENSION = 20;
 
@@ -174,11 +176,13 @@ GLvoid InitGL(){
 	std::string target_tex_file = "tex/target.ppm";
 	std::string swivel_tex_file = "tex/turret.ppm";
 	std::string barrel_tex_file = "tex/barrel.ppm";
-	std::string environment_tex_file = "tex/ParkingLot.ppm";
+	std::string environment_tex_file = "tex/cubemape.ppm";
 	std::string enemy_tex_file = "tex/enemy.ppm";
 	std::string tile_tex_file = "tex/naked_tile_baked.ppm";
 	std::string tree_tex_file = "tex/tree.ppm";
 	std::string rock_tex_file = "tex/rocks.ppm";
+	std::string tree_tile_tex = "tex/tree_tile.ppm";
+	std::string rock_tile_tex = "tex/rocky_tile.ppm";
 
 	mesh hero(hero_geo_file);
 	mesh target(target_geo_file);
@@ -187,6 +191,8 @@ GLvoid InitGL(){
 	mesh environment(environment_geo_file);
 	mesh enemy(enemy_geo_file);
 	mesh tile(tile_geo_file);
+	mesh tree(tree_geo_file);
+	mesh rock(rock_geo_file);
 	HERO_ID = meshes.size();
 	meshes.push_back(hero);
 	TARGET_ID = meshes.size();
@@ -201,6 +207,10 @@ GLvoid InitGL(){
 	meshes.push_back(enemy);
 	TILE_ID = meshes.size();
 	meshes.push_back(tile);
+	TREE_ID = meshes.size();
+	meshes.push_back(tree);
+	ROCK_ID = meshes.size();
+	meshes.push_back(rock);
 
 	glEnable(GL_TEXTURE_2D);
 	glGenTextures(1, &HERO_TEX);
@@ -210,6 +220,10 @@ GLvoid InitGL(){
 	glGenTextures(1, &ENVIRONMENT_TEX);
 	glGenTextures(1, &ENEMY_TEX);
 	glGenTextures(1, &TILE_TEX);
+	glGenTextures(1, &TREE_TEX);
+	glGenTextures(1, &ROCK_TEX);
+	glGenTextures(1, &TREETILE_TEX);
+	glGenTextures(1, &ROCKTILE_TEX);
 	loadPPM(hero_tex_file.c_str(), HERO_TEX);
 	loadPPM(target_tex_file.c_str(), TARGET_TEX);
 	loadPPM(swivel_tex_file.c_str(), SWIVEL_TEX);
@@ -217,6 +231,10 @@ GLvoid InitGL(){
 	loadPPM(environment_tex_file.c_str(), ENVIRONMENT_TEX);
 	loadPPM(enemy_tex_file.c_str(), ENEMY_TEX);
 	loadPPM(tile_tex_file.c_str(), TILE_TEX);
+	loadPPM(tree_tex_file.c_str(), TREE_TEX);
+	loadPPM(rock_tex_file.c_str(), ROCK_TEX);
+	loadPPM(tree_tile_tex.c_str(), TREETILE_TEX);
+	loadPPM(rock_tile_tex.c_str(), ROCKTILE_TEX);
 
 	camera = new game_object(-1,-1,-1);
 
@@ -265,12 +283,32 @@ GLvoid InitGL(){
 		{
 			int zmult = j - TILES_DIMENSION/2;
 			double rot = rand() % 4 * 90.0;
-			std::cout << rot << std::endl;
+			// std::cout << rot << std::endl;
 			game_object *tileX = new game_object(characters.size(), TILE_ID, TILE_TEX);
 			tileX->transform.rotateY(rot);
 			tileX->transform.translate(tile_width*xmult, 0.0, tile_length*zmult);
 			tileX->parent_to(camera);
 			characters.push_back(tileX);
+			int tile_type = rand() % 100;
+			if(tile_type >= 90 && tile_type < 95)
+			{
+				tileX->tex = TREETILE_TEX;
+				game_object *treeX = new game_object(characters.size(), TREE_ID, TREE_TEX);
+				treeX->transform = tileX->transform;
+				treeX->parent_to(camera);
+				bad_guys.push_back(characters.size());
+				characters.push_back(treeX);
+			}
+			else if(tile_type >= 95)
+			{
+				tileX->tex = ROCKTILE_TEX;
+				game_object *rockX = new game_object(characters.size(), ROCK_ID, ROCK_TEX);
+				rockX->transform = tileX->transform;
+				rockX->parent_to(camera);
+				bad_guys.push_back(characters.size());
+				characters.push_back(rockX);
+			}
+			
 		}
 	}
 
